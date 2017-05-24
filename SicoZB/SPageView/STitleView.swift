@@ -31,6 +31,14 @@ class STitleView: UIView {
         return scrollView
     }()
     
+    fileprivate lazy var bottomLine :UIView = {
+        let bottomLine = UIView()
+        bottomLine.backgroundColor = self.style.scrollLineColor
+        bottomLine.frame.size.height = self.style.scrollLineHeight
+        bottomLine.frame.origin.y = self.bounds.height - self.style.scrollLineHeight
+        return  bottomLine
+    }()
+    
 
     init(frame: CGRect  ,titles:[String] ,style:STitleStyle) {
         self.titles = titles
@@ -59,6 +67,10 @@ extension STitleView {
         //3 设置titleLabel的frame
         setuptitleLabelsFrame()
     
+        // 添加滚动条
+        if style.isShowSCrollLine {
+            scrollview.addSubview(bottomLine)
+        }
     }
     
     
@@ -71,12 +83,6 @@ extension STitleView {
             titleLabel.textAlignment = .center
             titleLabel.textColor = i==0 ? style.selectColor:style.normalColor
             titleLabel.font = UIFont.systemFont(ofSize: style.fontSize)
-            
-//            titleLabel.layer.borderColor = UIColor.orange.cgColor
-//            titleLabel.layer.borderWidth = 1.0
-//            titleLabel.layer.cornerRadius = 2.0
-//            titleLabel.layer.masksToBounds = true
-//            titleLabel.backgroundColor = UIColor.gray
             
             scrollview.addSubview(titleLabel)
             titleLabels.append(titleLabel)
@@ -105,7 +111,8 @@ extension STitleView {
                     x = style.itemMargin * 0.5
                     
                     if style.isShowSCrollLine {
-                        
+                        bottomLine.frame.origin.x = x
+                        bottomLine.frame.size.width = w
                     }
                 }else{
                 
@@ -115,6 +122,11 @@ extension STitleView {
             }else{//不能滚动布局
                 w = bounds.width/CGFloat(count)
                 x = w*CGFloat(i)
+                
+                if i == 0 && style.isShowSCrollLine {
+                    bottomLine.frame.origin.x = x
+                    bottomLine.frame.size.width = w
+                }
             }
             
             label.frame = CGRect(x:x,y: y, width: w, height: h)
@@ -140,10 +152,17 @@ extension STitleView{
         //2 调整title
         adjustTitleLabel(targetIndex: targetLabel.tag)
         
-        //3  通知代理  
+        //3 调整 bottomLine
+        if style.isShowSCrollLine {
+            UIView.animate(withDuration: 0.25, animations: { 
+                self.bottomLine.frame.origin.x = targetLabel.frame.origin.x
+                self.bottomLine.frame.size.width = targetLabel.frame.size.width
+            });
+        }
+        
+        //4  通知代理
         deleagte?.titleView(self, targetIndex: targetLabel.tag)
     
-        
     }
     
     
@@ -203,7 +222,15 @@ extension STitleView : SContentViewDelegate{
         sourceLabel.textColor = UIColor(r: selectRGB.0 - deltaRGB.0*pargress, g: selectRGB.1 - deltaRGB.1*pargress, b: selectRGB.2 - deltaRGB.2*pargress)
 
         
-        
+        // 2  bottomLine渐变的过程 
+        if style.isShowSCrollLine {
+            let deltax = targetLabel.frame.origin.x - sourceLabel.frame.origin.x
+            let deltaw = targetLabel.frame.width - sourceLabel.frame.width
+            
+            bottomLine.frame.origin.x = sourceLabel.frame.origin.x + deltax*pargress
+            bottomLine.frame.size.width = sourceLabel.frame.width + deltaw*pargress
+            
+        }
     }
 }
 
